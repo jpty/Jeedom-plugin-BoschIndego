@@ -33,11 +33,13 @@ if ( $curlHttpCode == 200 ) {
 echo '<div style="width: 100%; padding: 7px 35px 7px 15px; margin-bottom: 5px; max-height: 787px; z-index: 9999;" id="div_alert" class="alert jqAlert alert-success"><span class="displayError">Connexion OK</span></div>';
   // echo "ContextId = ".$params['contextId'] ."<br/>";
   // echo "UserId = " .$params['userId'] ."<br/>";
-  echo "Numéro de série = " .$params['almSn'] ."<br/>";
-  // echo '<h4>Contenu du fichier "'.__DIR__ .'/../../core/class/indego_dataTokenAuthenticate.json" </h4>';
-  // echo file_get_contents(__DIR__ ."/../../core/class/indego_dataTokenAuthenticate.json");
+  echo "Numéro de série à copier/coller dans le champ Numéros de série de la Configuration du plugin:<br/>";
+  echo $params['almSn'];
+  echo "<br/><br/><br/>";
+  echo '<div style="width: 100%; padding: 7px 35px 7px 15px; margin-bottom: 5px; max-height: 787px; z-index: 9999;" id="div_alert" class="alert jqAlert alert-success"><span class="displayError">Réponse du serveur Bosch pour diagnostic</span></div>';
+  echo file_get_contents(__DIR__ ."/../../core/class/indego_dataTokenAuthenticate.json");
   return($params['almSn']);
 }
 else {
-echo '<div style="width: 100%; padding: 7px 35px 7px 15px; margin-bottom: 5px; max-height: 787px; z-index: 9999;" id="div_alert" class="alert jqAlert alert-danger"><span class="displayError">Echec de la connexion au site ['.$params['api'] .'authenticate].<br/>Vérifiez le nom d\'utilisateur et le mot de passe.<br/> HTTP_CODE: ' .$curlHttpCode .'</span></div>';
+echo '<div style="width: 100%; padding: 7px 35px 7px 15px; margin-bottom: 5px; max-height: 787px; z-index: 9999;" id="div_alert" class="alert jqAlert alert-danger"><span class="displayError">Echec de la connexion au site Web ['.$params['api'] .'authenticate].<br/>Vérifiez que le nom d\'utilisateur '.$params['username'] .' et que le mot de passe associé sont corrects.<br/> HTTP_CODE: ' .$curlHttpCode .'</span></div>';
 }
