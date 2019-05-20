@@ -61,6 +61,7 @@ function BoschIndego_update() {
     $cron->setSchedule('* * * * *');
     $cron->save();
   }
+  // BoschIndego_copyTemplate();
 }
 
 function BoschIndego_remove() {

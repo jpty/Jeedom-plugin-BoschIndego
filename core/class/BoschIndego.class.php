@@ -116,7 +116,9 @@ $this->writeData(__DIR__ ."/indego_dataGetInformation-" .$params['almSn'] .".jso
       $mowmode =  $dataJsonState->mowmode;
       $this->CheckAndUpdateCmd('mowmode',$mowmode);
         //
-      $statusDate =  date('d-m-Y H:i:s');
+      // $statusDate =  date('d-m-Y H:i:s');
+      setlocale(LC_TIME,"fr_FR.utf8");
+      $statusDate = strftime("%A %e %b %H:%M:%S", time());
       $this->CheckAndUpdateCmd('statusDate',$statusDate);
         //
       $totalOperate =  $dataJsonState->runtime->total->operate;
@@ -138,8 +140,11 @@ $this->writeData(__DIR__ ."/indego_dataGetInformation-" .$params['almSn'] .".jso
       $this->CheckAndUpdateCmd('svg_yPos',$svg_yPos);
 
         // test carte a mettre à jour
+      $cmd = $this->getCmd('info', 'map');
+      $prevMap = '';
+      if (is_object($cmd)) $prevMap = $cmd->execCmd();
       $Umap =  $dataJsonState->map_update_available;
-      // if ( $Umap )
+      if ( $Umap || $prevMap == '')
         $this->getMap($params);
 
         // Recup date prochaine tonte
@@ -210,14 +215,6 @@ $this->writeData(__DIR__ ."/indego_dataGetInformation-" .$params['almSn'] .".jso
     // else echo "MowNext à jour<br/>";
   }
 
-  /*
-  public function getAlert() {
-    log::add(__CLASS__,'debug', __FUNCTION__);
-    $this->initParams($params);
-    $this->getAlerts($params);
-  }
-   */
-  
   public function messageAlert($alert) {
     log::add(__CLASS__,'debug', __FUNCTION__);
     $date = date_format(date_create($alert->date),'d-m-Y H:i');
@@ -230,35 +227,6 @@ $this->writeData(__DIR__ ."/indego_dataGetInformation-" .$params['almSn'] .".jso
     <i class=\"fas fa-times pull-left cursor removeEvent\" data-uid=\"$uid\" style=\"margin-top : 12px;margin-left: 2px;\"></i>
     <span style=\"font-weight: bold;\">$date<br/>$headline Code: $error_code<br/></span>";
     $msg .= "<span style=\"font-size : 0.7em;\">" .$message ."</span>";
-  /*  $msg .= "<script>
-        $('.removeEvent[$uid]').on('click', function() {
-            bootbox.confirm('Etes-vous sûr de vouloir supprimer ce message ?', function(result) {
-                if (result) {
-                    $.ajax({
-                        type: 'POST',
-                        url: 'plugins/calendar/core/ajax/calendar.ajax.php',
-                        data: {
-                            action: 'removeOccurence',
-                            id: '#event_id#',
-                            date: '#date#'
-                        },
-                        dataType: 'json',
-                        error: function(request, status, error) {
-                            handleAjaxError(request, status, error, $('#div_eventEditAlert'));
-                        },
-                        success: function(data) {
-                            if (data.state != 'ok') {
-                                $('#div_eventEditAlert').showAlert({message: data.result, level: 'danger'});
-                                return;
-                            }
-                            $('.removeEvent[data-uid=$uid]').parent().remove();
-                        }
-                    });
-                }
-            });
-        });
-    </script>";
-   */
     $msg .= "</div>";
     return($msg);
   }
@@ -275,7 +243,7 @@ $this->writeData(__DIR__ ."/indego_dataGetInformation-" .$params['almSn'] .".jso
     $curlHttpCode = curl_getinfo($curl, CURLINFO_HTTP_CODE);
     curl_close($curl);
     if ( $curlHttpCode == 200 ) {
-$this->writeData(__DIR__ ."/indego_dataAlert.json",$result);
+// $this->writeData(__DIR__ ."/indego_dataAlert.json",$result);
       $alerts = '';
       $dataJson = json_decode($result);
       if ( $dataJson !== null ) {
@@ -303,18 +271,16 @@ $this->writeData(__DIR__ ."/indego_dataAlert.json",$result);
     if ( $curlHttpCode == 200 ) {
         //
       $map = $result;
-      
       $cmd = $this->getCmd('info', 'svg_xPos');
       if (is_object($cmd)) $xpos = $cmd->execCmd();
       else $xpos = 0;
       $cmd = $this->getCmd('info', 'svg_yPos');
       if (is_object($cmd)) $ypos = $cmd->execCmd();
       else $ypos = 0;
-
-// log::add(__CLASS__,'debug', "Svg x=$xpos y=$ypos");
+        // carte sur une seule ligne de texte. Sinon erreur javascript
+      $map = str_replace("\n","",$map);
         // ajout de la position de la tondeuse sur la carte
       $map = str_replace("</svg>","<circle cx=\"$xpos\" cy=\"$ypos\" r=\"14\" stroke=\"black\" stroke_width=\"3\" fill=\"green\" /></svg>",$map);
-      // echo "Map: $BoschIndego_map<br/>";
       $this->CheckAndUpdateCmd('map',$map);
 // $this->writeData(__DIR__ ."/indego_dataMap-" .date('dmHi') ."-" .$params['almSn'] .".svg",$map);
     }
@@ -346,6 +312,7 @@ $this->writeData(__DIR__ ."/indego_dataAlert.json",$result);
     $result = curl_exec($curl);
     $curlHttpCode = curl_getinfo($curl, CURLINFO_HTTP_CODE);
     curl_close($curl);
+      // ecriture dans fichier. Donnée utilisée dans desktop/modal/authenticate.php
     $this->writeData(__DIR__ ."/indego_dataTokenAuthenticate.json",$result);
     if ( $curlHttpCode == 200 ) {
         // MAJ des paramètre authentification
@@ -414,7 +381,9 @@ $this->writeData(__DIR__ ."/indego_dataAlert.json",$result);
       $actionHttpCode = (($curlHttpCode == 200) ? "200-OK" : "$curlHttpCode-ERROR");
       $this->CheckAndUpdateCmd('actionHttpCode',$actionHttpCode);
         //
-      $actionDate = date('d-m-Y H:i:s');
+      setlocale(LC_TIME,"fr_FR.utf8");
+      $actionDate = strftime("%A %e %b %H:%M:%S", time());
+      // $actionDate = date('d-m-Y H:i:s');
       $this->CheckAndUpdateCmd('actionDate',$actionDate);
         //
       $actionLast = $action;
@@ -701,7 +670,7 @@ $this->writeData(__DIR__ ."/indego_datadoAction.json",$json);
       $cmdLogicalId = 'cronState'; $order++;
       $cmd = $this->getCmd('info', $cmdLogicalId);
       if (!is_object($cmd)) {
-        $cmd = $this->creationCmd($logicId,$cmdLogicalId,'Surveillance');
+        $cmd = $this->creationCmd($logicId,$cmdLogicalId,'Daemon surveillance');
         // $cmd->setTemplate("dashboard",'line');
         $cmd->setOrder(1); // $order);
         $cmd->setSubType('binary');
