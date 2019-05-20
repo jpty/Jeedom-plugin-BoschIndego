@@ -41,5 +41,5 @@ echo '<div style="width: 100%; padding: 7px 35px 7px 15px; margin-bottom: 5px; m
   return($params['almSn']);
 }
 else {
-echo '<div style="width: 100%; padding: 7px 35px 7px 15px; margin-bottom: 5px; max-height: 787px; z-index: 9999;" id="div_alert" class="alert jqAlert alert-danger"><span class="displayError">Echec de la connexion au site Web ['.$params['api'] .'authenticate].<br/>Vérifiez que le nom d\'utilisateur '.$params['username'] .' et que le mot de passe associé sont corrects.<br/> HTTP_CODE: ' .$curlHttpCode .'</span></div>';
+  echo '<div style="width: 100%; padding: 7px 35px 7px 15px; margin-bottom: 5px; max-height: 787px; z-index: 9999;" id="div_alert" class="alert jqAlert alert-danger"><span class="displayError">Echec de la connexion au site Web ['.$params['api'] .'authenticate].<br/>Vérifiez que le nom d\'utilisateur '.$params['username'] .' et que le mot de passe associé sont corrects.<br/> HTTP_CODE: ' .$curlHttpCode .'</span></div>';
 }
