@@ -316,7 +316,7 @@ $this->writeData(__DIR__ ."/indego_dataAlert.json",$result);
       $map = str_replace("</svg>","<circle cx=\"$xpos\" cy=\"$ypos\" r=\"14\" stroke=\"black\" stroke_width=\"3\" fill=\"green\" /></svg>",$map);
       // echo "Map: $BoschIndego_map<br/>";
       $this->CheckAndUpdateCmd('map',$map);
-$this->writeData(__DIR__ ."/indego_dataMap-" .date('dmHi') ."-" .$params['almSn'] .".svg",$map);
+// $this->writeData(__DIR__ ."/indego_dataMap-" .date('dmHi') ."-" .$params['almSn'] .".svg",$map);
     }
     else {
       $this->CheckAndUpdateCmd('map','');
