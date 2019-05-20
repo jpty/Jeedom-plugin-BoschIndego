@@ -10,7 +10,7 @@
   <script>
     jeedom.cmd.update['#id#'] = function(_options){
       var Stxt = "?";
-      var imgPath = "plugins/widget/core/template/dashboard/cmd.info.numeric.BoschIndegoStateV3/";
+      var imgPath = "plugins/BoschIndego/core/template/dashboard/cmd.info.numeric.BoschIndegoStateV3/";
       var Simg = "";
       $('.cmd[data-cmd_id=#id#]').attr('title','Valeur du '+_options.valueDate+', collectée le '+_options.collectDate)
       $('.cmd[data-cmd_id=#id#] .state').empty().append(_options.display_value);
