@@ -30,6 +30,23 @@ function BoschIndego_install() {
     $cron->setSchedule('* * * * *');
     $cron->save();
   }
+  BoschIndego_copyTemplate();
+}
+
+function BoschIndego_copyTemplate() {
+  // Copie des templates dans le répertoire du plugin widget pour pouvoir éditer
+  // les commandes sans perte de la template associée.
+  $srcDir  = __DIR__ . '/../core/template/dashboard';
+  $resuDir = __DIR__ . '/../../widget/core/template/dashboard';
+  if (file_exists($resuDir)) { // plugin widget deja installé
+    $file = '/cmd.info.numeric.BoschIndegoDureeV3.html';
+    if (!file_exists($resuDir .$file)) shell_exec("cp $srcDir$file $resuDir");
+    $file = '/cmd.info.numeric.BoschIndegoStateV3.html';
+    if (!file_exists($resuDir .$file)) shell_exec("cp $srcDir$file $resuDir");
+    $file = '/cmd.info.string.BoschIndegoSvgV3.html';
+    if (!file_exists($resuDir .$file)) shell_exec("cp $srcDir$file $resuDir");
+	}
+  else log::add('BoschIndego','error',__FUNCTION__ ." Directory $resuDir not found. Please install widget plugin first");
 }
 
 function BoschIndego_update() {
