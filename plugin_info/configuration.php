@@ -37,9 +37,9 @@ if (!isConnect()) {
             </div>
         </div>
         <div class="form-group">
-            <label class="col-lg-4 control-label"></label>
+            <label class="col-lg-4 control-label">Sauvegarder la configuration avant de </label>
             <div class="col-lg-2">
-                <span class="col-lg-4"><a class="btn btn-sm btn-info" id="btn-test_connection"><i class="fas fa-magic"></i> {{Test connexion}}</a></span>
+                <span class="col-lg-4"><a class="btn btn-sm btn-info" id="btn-test_connection"><i class="fas fa-magic"></i> {{Tester connexion}}</a></span>
             </div>
         </div>
         <div class="form-group">
