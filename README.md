@@ -15,7 +15,7 @@
 - Ajoutez un équipement, renseignez les différents champs et sélectionnez le numéro de série. Sauvegardez. L'équipement est maintenant opérationnel et doit apparaitre sur votre tableau de bord. Cliquez sur l'icone en haut à droite de la tuile pour provoquer une mise à jour de la tuile. Redimensionnez la tuile.
 
 ## Utilisation
-Lors de l'exécution d'une tonte, un daemon de surveillance de l'avancement de la tonte se lance et s'arrêtera 2 minutes après le retour de la tondeuse sur la station.
+Au lancement de l'action Tondre, un daemon de surveillance de l'avancement de la tonte démarre et s'arrêtera 2 minutes après le retour de la tondeuse sur la station.
 
 Les actions créées sont mow, pause, returntodock, refresh, crfonSetEnableOn et cronSetEnableOff. Les 2 dernières actions sont pour le daemon de surveillance de la tonte.
 
