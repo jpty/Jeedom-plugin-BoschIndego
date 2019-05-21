@@ -15,9 +15,9 @@
 - Ajoutez un équipement, renseignez les différents champs et sélectionnez le numéro de série. Sauvegardez. L'équipement est maintenant opérationnel et doit apparaitre sur votre tableau de bord. Cliquez sur l'icone en haut à droite de la tuile pour provoquer une mise à jour de la tuile. Redimensionnez la tuile.
 
 ## Utilisation
-Au lancement de l'action Tondre, un daemon de surveillance de l'avancement de la tonte démarre et s'arrêtera 2 minutes après le retour de la tondeuse sur la station.
+En mode de tonte manuelle, au lancement de l'action Tondre, un daemon de surveillance de l'avancement de la tonte démarre et s'arrêtera 2 minutes après le retour de la tondeuse sur la station.
 
-Les actions créées sont mow, pause, returntodock, refresh, crfonSetEnableOn et cronSetEnableOff. Les 2 dernières actions sont pour le daemon de surveillance de la tonte.
+En mode de tonte programmée dans l'application Bosch, la date/heure de la prochaine tonte est récupérée par le plugin. Une entrée cron est créée pour lancer le daemon de surveillance au début de la tonte. En cas de modification de l'heure de tonte, il faut cliquer sur l'icone en haut à droite de la tuile pour synchroniser les données. 
 
-## Limitation
-La version actuelle ne gère que le mode de tonte Manuel. Il faut provoquer l'action de Tonte avec un scénario, le plugin Agenda ou autre.
+Les actions créées sont mow, pause, returntodock, refresh, cronSetEnableOn et cronSetEnableOff. Les 2 dernières actions sont pour le daemon de surveillance de la tonte.
+
