@@ -21,3 +21,5 @@ En mode de tonte programmée dans l'application Bosch, la date/heure de la proch
 
 Les actions créées sont mow, pause, returntodock, refresh, cronSetEnableOn et cronSetEnableOff. Les 2 dernières actions sont pour le daemon de surveillance de la tonte.
 
+Attention aux doubles connexions appli téléphone et plugin Jeedom.
+Le résultat est des erreurs 401 (connexion refusée) coté plugin.
