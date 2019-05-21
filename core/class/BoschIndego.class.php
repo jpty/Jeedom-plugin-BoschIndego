@@ -57,6 +57,14 @@ class BoschIndego extends eqLogic {
     }
   }
 
+  public function cronNextMow() {
+    log::add(__CLASS__,'debug', __FUNCTION__);
+    foreach (eqLogic::byType(__CLASS__, true) as $eqLogic) {
+      $eqLogic->cronSetEnable(1); // Demarrage cron de surveillance
+      break;
+    }
+  }
+
   public function cronSetEnable($enable) {
     log::add(__CLASS__,'debug', __FUNCTION__ .' ' .($enable)?"On":"Off");
     $cron = cron::byClassAndFunction('BoschIndego', 'cronBoschIndego');
@@ -97,7 +105,7 @@ class BoschIndego extends eqLogic {
     $curlHttpCode = curl_getinfo($curl, CURLINFO_HTTP_CODE);
     curl_close($curl);
     if ( $curlHttpCode == 200 ) {
-$this->writeData(__DIR__ ."/indego_dataGetInformation-" .$params['almSn'] .".json",$result);
+// $this->writeData(__DIR__ ."/indego_dataGetInformation-" .$params['almSn'] .".json",$result);
       $dataJsonState = json_decode($result);
         //
       $cmd = $this->getCmd('info', 'state');
@@ -110,9 +118,6 @@ $this->writeData(__DIR__ ."/indego_dataGetInformation-" .$params['almSn'] .".jso
       $mowed =  $dataJsonState->mowed;
       $this->CheckAndUpdateCmd('mowed',$mowed);
         //
-      $cmd = $this->getCmd('info', 'mowmode');
-      if (is_object($cmd)) $prev_mowmode = $cmd->execCmd();
-      else $prev_mowmode = 0;
       $mowmode =  $dataJsonState->mowmode;
       $this->CheckAndUpdateCmd('mowmode',$mowmode);
         //
@@ -147,86 +152,119 @@ $this->writeData(__DIR__ ."/indego_dataGetInformation-" .$params['almSn'] .".jso
       if ( $Umap || $prevMap == '')
         $this->getMap($params);
 
-        // Recup date prochaine tonte
-      $this->getNextMowingDatetime($params,$prev_mowmode,$mowmode);
-
       $this->getAlerts($params);
         // Arret du cron si tondeuse sur station
       $cronState = $this->cronGetEnable();
       if($cronState == 1 && $state == 258 && $prevState == 258) {
         $this->cronSetEnable(0); // Arret cron
         $this->getMap($params);  // Recup carte
+        // Recup date prochaine tonte
+        $this->getNextMowingDatetime($params);
         log::add(__CLASS__,'debug', "Arret cron");
       }
     }
     else $this->indegoLogCurl(__FUNCTION__,$curlHttpCode,$result);
   }
 
-  public function getNextMowingDatetime($params,$prev_mowmode,$next_mowmode) {
-    if ( $next_mowmode == 1 ) { // mode manu
+  public function getNextMowingDatetime($params) {
+    log::add('BoschIndego','debug',__FUNCTION__ .' Sn:' .$params['almSn']);
+    $cmd = $this->getCmd('info', 'mowmode');
+    if (is_object($cmd)) $mowmode = $cmd->execCmd();
+    else $mowmode = 0;
+// log::add('BoschIndego','debug',__FUNCTION__ .' Mowmode:' .$mowmode);
+    if ( $mowmode == 1 ) { // mode manu demandé
       $mowNext = "Mode manuel";
       $this->CheckAndUpdateCmd('mowNext',$mowNext);
       $this->CheckAndUpdateCmd('mowNextTS',0);
+      $this->cronNextMowDelete();
       return;
     }
     $cmd = $this->getCmd('info', 'mowNextTS');
     if (is_object($cmd)) $mowNextTS = $cmd->execCmd();
     else $mowNextTS = 0;
-    if ( $next_mowmode == 2 && // mode auto
-         ( time() > $mowNextTS || $prev_mowmode != $next_mowmode ) ) {
-      setlocale(LC_TIME,"fr_FR.utf8");
-      $url = $params['api'] ."alms/" .$params['almSn'] ."/predictive/nextcutting?last=YYYY-MM-DDTHH:MM:SS%2BHH:MM";
-      $curl    = curl_init();
-      $headers = array('Content-type: application/json','x-im-context-id: ' .$params['contextId']);
-      curl_setopt($curl, CURLOPT_HTTPHEADER, $headers);
-      curl_setopt($curl, CURLOPT_URL, $url);
-      curl_setopt($curl, CURLOPT_RETURNTRANSFER, true);
-      curl_setopt($curl, CURLOPT_HTTPGET, true);
-      $result = curl_exec($curl);
-      $curlHttpCode = curl_getinfo($curl, CURLINFO_HTTP_CODE);
-      curl_close($curl);
-      if ( $curlHttpCode == 200 ) {
-        $dataJson = json_decode($result);
-        if ( $dataJson === null ) {
-          $mowNext = "Manuel";
-          $dateTS = 0;
-        }
-        else {
-          $dateTS = date_create_from_format("Y-m-d\TH:i:sP", $dataJson->mow_next);
-          if ( $dateTS != false ) {
-            $mowNext = strftime("%A %e %b %H:%M", $dateTS->getTimestamp());
-            $dateTS = $dateTS->getTimestamp();
-          }
-          else {
-            $mowNext = $dataJson->mow_next;
-            $dateTS = 0;
-          }
-        }
-      }
-      else {
-        $this->indegoLogCurl(__FUNCTION__,$curlHttpCode,$result);
-        $mowNext = "Mode manuel";
+    setlocale(LC_TIME,"fr_FR.utf8");
+    $url = $params['api'] ."alms/" .$params['almSn'] ."/predictive/nextcutting?last=YYYY-MM-DDTHH:MM:SS%2BHH:MM";
+    $curl    = curl_init();
+    $headers = array('Content-type: application/json','x-im-context-id: ' .$params['contextId']);
+    curl_setopt($curl, CURLOPT_HTTPHEADER, $headers);
+    curl_setopt($curl, CURLOPT_URL, $url);
+    curl_setopt($curl, CURLOPT_RETURNTRANSFER, true);
+    curl_setopt($curl, CURLOPT_HTTPGET, true);
+    $result = curl_exec($curl);
+    $curlHttpCode = curl_getinfo($curl, CURLINFO_HTTP_CODE);
+    curl_close($curl);
+    if ( $curlHttpCode == 200 ) {
+// $this->writeData(__DIR__ ."/indego_dataNextMowingDatetime-" .$params['almSn'] .".json",$result);
+      $dataJson = json_decode($result);
+      if ( $dataJson === null ) {
+        $mowNext = "Manuel";
         $dateTS = 0;
       }
+      else {
+        $dateTS = date_create_from_format("Y-m-d\TH:i:sP", $dataJson->mow_next);
+        if ( $dateTS != false ) {
+          $mowNext = strftime("%A %e %b %H:%M", $dateTS->getTimestamp());
+          $dateTS = $dateTS->getTimestamp();
+        }
+        else {
+          $mowNext = $dataJson->mow_next;
+          $dateTS = 0;
+        }
+      }
+      if($dateTS == 0) $this->cronNextMowDelete();
+      else $this->cronNextMowAdd($dateTS);
       $this->CheckAndUpdateCmd('mowNext',$mowNext);
       $this->CheckAndUpdateCmd('mowNextTS',$dateTS);
-// $this->writeData(__DIR__ ."/indego_dataNextMowingDatetime.json",$result);
     }
-    // else echo "MowNext à jour<br/>";
+    else {
+      $this->indegoLogCurl(__FUNCTION__,$curlHttpCode,$result);
+      $mowNext = "Mode manuel";
+      $dateTS = 0;
+    }
+  }
+
+  public function cronNextMowAdd($TS) {
+    log::add('BoschIndego','debug',__FUNCTION__);
+    $cron = cron::byClassAndFunction('BoschIndego', 'cronNextMow');
+    if (!is_object($cron)) {
+      log::add('BoschIndego','debug',__FUNCTION__ .' Creating cronNextMow entry');
+      $cron = new cron();
+      $cron->setClass('BoschIndego');
+      $cron->setFunction('cronNextMow');
+      $cron->setEnable(1);
+      $cron->setOnce(1);
+      $cron->setDeamon(0);
+    }
+    $cron->setSchedule(date('i',$TS) .' ' .date('H',$TS) .' ' .date('d',$TS) .' ' .date('m',$TS) .' * ' .date('Y',$TS));
+    $cron->save();
+  }
+
+  public function cronNextMowDelete() {
+    log::add('BoschIndego','debug',__FUNCTION__);
+    $cron = cron::byClassAndFunction('BoschIndego', 'cronNextMow');
+    if (is_object($cron)) {
+      log::add('BoschIndego','debug',__FUNCTION__ .' Removing cronNextMow entry');
+      $cron->remove();
+    }
   }
 
   public function messageAlert($alert) {
     log::add(__CLASS__,'debug', __FUNCTION__);
-    $date = date_format(date_create($alert->date),'d-m-Y H:i');
+    // $tz = date_default_timezone_get();
+    // date_default_timezone_set( "UTC" );
+    // $seconds = timezone_offset_get( timezone_open($tz), new DateTime() );
+    // date_default_timezone_set($tz);
+    $ts = strtotime($alert->date); // + $seconds;
+    setlocale(LC_TIME,"fr_FR.utf8");
+    $date = strftime("%A %e %b %H:%M:%S", $ts);
     $headline = $alert->headline;
     $error_code = $alert->error_code;
     $message = $alert->message;
-    return($date .' ' .$headline .' ' .$error_code .' ' .$message);
+    // return($date .' ' .$headline .' ' .$error_code .' ' .$message);
     $uid = $alert->alert_id;
-    $msg = "<div style=\"background-color: #2982b9;color: #ffffff; margin-top : 2px; -moz-border-radius: 5px;-webkit-border-radius: 5px; border-radius: 5px;margin-right : 5px;margin-left : 5px;\">
-    <i class=\"fas fa-times pull-left cursor removeEvent\" data-uid=\"$uid\" style=\"margin-top : 12px;margin-left: 2px;\"></i>
-    <span style=\"font-weight: bold;\">$date<br/>$headline Code: $error_code<br/></span>";
-    $msg .= "<span style=\"font-size : 0.7em;\">" .$message ."</span>";
+    // $msg = "<div style=\"background-color:#2982b9;color:#ffffff;margin-top:2px;border-radius:5px;margin-right:5px;margin-left:5px;\"><i class=\"fas fa-times pull-left cursor removeEvent\" data-uid=\"$uid\" style=\"margin-top:12px;margin-left:2px;\"></i><span style=\"font-weight:bold;\">$date<br/>$headline Code: $error_code<br/></span>";
+    $msg = "<div style=\"background-color:#2982b9;color:#ffffff;margin-top:2px;border-radius:5px;margin-right:5px;margin-left:5px;\"><span style=\"font-weight:bold;\">$date<br/>$headline Code: $error_code<br/></span>";
+    $msg .= "<span style=\"font-size:0.8em;font-weight:normal;line-height:0.8em;\">" .$message ."</span>";
     $msg .= "</div>";
     return($msg);
   }
@@ -243,15 +281,18 @@ $this->writeData(__DIR__ ."/indego_dataGetInformation-" .$params['almSn'] .".jso
     $curlHttpCode = curl_getinfo($curl, CURLINFO_HTTP_CODE);
     curl_close($curl);
     if ( $curlHttpCode == 200 ) {
-// $this->writeData(__DIR__ ."/indego_dataAlert.json",$result);
+// $this->writeData(__DIR__ ."/indego_dataAlerts.json",$result);
       $alerts = '';
       $dataJson = json_decode($result);
       if ( $dataJson !== null ) {
         foreach ( $dataJson as $alert ) {
-          $alerts .= $this->messageAlert($alert);
-          break;
+          if( $alert->alm_sn == $params['almSn'] ) {
+            $alerts .= $this->messageAlert($alert);
+            break;
+          }
         }
       }
+      if($alerts == '') $alerts = "<div style=\"background-color:#2982b9;color:#ffffff;margin-top:2px;border-radius:5px;margin-right:5px;margin-left:5px;\"><span style=\"font-weight:bold;\">Pas d'alerte</span></div>";
       $this->CheckAndUpdateCmd('alerts',$alerts);
     }
     else $this->indegoLogCurl(__FUNCTION__,$curlHttpCode,$result);
@@ -269,6 +310,7 @@ $this->writeData(__DIR__ ."/indego_dataGetInformation-" .$params['almSn'] .".jso
     $curlHttpCode = curl_getinfo($curl, CURLINFO_HTTP_CODE);
     curl_close($curl);
     if ( $curlHttpCode == 200 ) {
+// $this->writeData(__DIR__ ."/indego_dataMap-" .date('dmHi') ."-" .$params['almSn'] .".svg",$map);
         //
       $map = $result;
       $cmd = $this->getCmd('info', 'svg_xPos');
@@ -282,7 +324,6 @@ $this->writeData(__DIR__ ."/indego_dataGetInformation-" .$params['almSn'] .".jso
         // ajout de la position de la tondeuse sur la carte
       $map = str_replace("</svg>","<circle cx=\"$xpos\" cy=\"$ypos\" r=\"14\" stroke=\"black\" stroke_width=\"3\" fill=\"green\" /></svg>",$map);
       $this->CheckAndUpdateCmd('map',$map);
-// $this->writeData(__DIR__ ."/indego_dataMap-" .date('dmHi') ."-" .$params['almSn'] .".svg",$map);
     }
     else {
       $this->CheckAndUpdateCmd('map','');
@@ -301,8 +342,8 @@ $this->writeData(__DIR__ ."/indego_dataGetInformation-" .$params['almSn'] .".jso
       );
     $requestBody = json_encode($requestBody);
     $requestHeader = array(
-        'Authorization: Basic ' .base64_encode($params['username'] .':' .$params['password']),
-        'Content-Type: application/json'
+      'Authorization: Basic ' .base64_encode($params['username'] .':' .$params['password']),
+      'Content-Type: application/json'
     );    
     $curl = curl_init($urlA);
     curl_setopt($curl, CURLOPT_HTTPHEADER, $requestHeader);
@@ -312,9 +353,9 @@ $this->writeData(__DIR__ ."/indego_dataGetInformation-" .$params['almSn'] .".jso
     $result = curl_exec($curl);
     $curlHttpCode = curl_getinfo($curl, CURLINFO_HTTP_CODE);
     curl_close($curl);
-      // ecriture dans fichier. Donnée utilisée dans desktop/modal/authenticate.php
-    $this->writeData(__DIR__ ."/indego_dataTokenAuthenticate.json",$result);
+    $retVal = array('httpCode'=> $curlHttpCode, 'data'=> $result);
     if ( $curlHttpCode == 200 ) {
+// $this->writeData(__DIR__ ."/indego_dataTokenAuthenticate.json",$result);
         // MAJ des paramètre authentification
       $json_data = json_decode($result);
       $params['contextId'] = $json_data->contextId;
@@ -323,7 +364,7 @@ $this->writeData(__DIR__ ."/indego_dataGetInformation-" .$params['almSn'] .".jso
     }
     else
       $this->indegoLogCurl(__FUNCTION__,$curlHttpCode,$result);
-    return($curlHttpCode);
+    return($retVal);
   }
 
   public function checkAuthentication(&$params) {
@@ -383,7 +424,6 @@ $this->writeData(__DIR__ ."/indego_dataGetInformation-" .$params['almSn'] .".jso
         //
       setlocale(LC_TIME,"fr_FR.utf8");
       $actionDate = strftime("%A %e %b %H:%M:%S", time());
-      // $actionDate = date('d-m-Y H:i:s');
       $this->CheckAndUpdateCmd('actionDate',$actionDate);
         //
       $actionLast = $action;
@@ -406,8 +446,8 @@ $this->writeData(__DIR__ ."/indego_datadoAction.json",$json);
   public function indegoLogCurl($function,$curlHttpCode,$result) {
     $msg = $function .str_repeat(" ",30-strlen($function));
     $msg .= ' HTTP_CODE : ' .$curlHttpCode;
-    $msg .= ' Result : ' .$result;
-    log::add(__CLASS__, 'debug', $msg);
+    if($result != '') $msg .= ' Result : ' .$result;
+    log::add(__CLASS__, 'error', $msg);
   }
 
   public function disableCalendar() {
@@ -522,7 +562,6 @@ $this->writeData(__DIR__ ."/indego_datadoAction.json",$json);
         //
       foreach (array("mow", "pause", "returntodock", "refresh", "authenticate", "cronSetEnableOn", "cronSetEnableOff") as $actionId) {
         $actionCmd = $this->getCmd('action', $actionId);
-        // $actionCmd = BoschIndegoCmd::byEqLogicIdAndLogicalId($logicId,$actionId);
         $order++;
         if (!is_object($actionCmd)) {
           $cmd = new BoschIndegoCmd();
@@ -663,6 +702,7 @@ $this->writeData(__DIR__ ."/indego_datadoAction.json",$json);
       if (!is_object($cmd)) {
         $cmd = $this->creationCmd($logicId,$cmdLogicalId,'Dernier message');
         $cmd->setDisplay("forceReturnLineBefore","1");
+        $cmd->setDisplay("showNameOndashboard","0");
         $cmd->setOrder($order);
         $cmd->save();
       }
@@ -772,6 +812,8 @@ class BoschIndegoCmd extends cmd {
         break;
       case "refresh":
         $eqLogic->getInformation($params);
+          // Recup date prochaine tonte
+        $eqLogic->getNextMowingDatetime($params);
         break;
       default:
         log::add('BoschIndego', 'error', "Unknown action " .$this->getLogicalId());
