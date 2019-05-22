@@ -74,7 +74,7 @@ class BoschIndego extends eqLogic {
       if ( $enable ) $this->CheckAndUpdateCmd('state',262);
       return($this->cronGetEnable());
     }
-    else log::add('BoschIndego','error',__FUNCTION__ .' cronBoschIndego not found');
+    else log::add(__CLASS__,'error',__FUNCTION__ .' cronBoschIndego not found');
     return(-1);
   }
 
@@ -84,7 +84,7 @@ class BoschIndego extends eqLogic {
       $status = $cron->getEnable(0);
     }
     else {
-      log::add('BoschIndego','error',__FUNCTION__ .' cronBoschIndego not found');
+      log::add(__CLASS__,'error',__FUNCTION__ .' cronBoschIndego not found');
       $status = -1;
     }
     $this->CheckAndUpdateCmd('cronState',$status);
@@ -92,7 +92,9 @@ class BoschIndego extends eqLogic {
   }
 
   public function getInformation($params) {
-    $this->checkAuthentication($params);
+    $retVal = $this->checkAuthentication($params);
+    if($retVal['httpCode'] != 200)
+      throw new Exception(__('Erreur d\'authentification. Impossible d\'exécuter '.__FUNCTION__, __FILE__));
     $url = $params['api'] ."alms/" .$params['almSn'] ."/state";
     log::add(__CLASS__,'debug', __FUNCTION__ .' URL=' .$url);
     $curl    = curl_init();
@@ -104,6 +106,7 @@ class BoschIndego extends eqLogic {
     $result = curl_exec($curl);
     $curlHttpCode = curl_getinfo($curl, CURLINFO_HTTP_CODE);
     curl_close($curl);
+    $retVal = array('httpCode'=> $curlHttpCode, 'data'=> $result);
     if ( $curlHttpCode == 200 ) {
 // $this->writeData(__DIR__ ."/indego_dataGetInformation-" .$params['almSn'] .".json",$result);
       $dataJsonState = json_decode($result);
@@ -163,7 +166,7 @@ class BoschIndego extends eqLogic {
         log::add(__CLASS__,'debug', "Arret cron");
       }
     }
-    else $this->indegoLogCurl(__FUNCTION__,$curlHttpCode,$result);
+    return($retVal);
   }
 
   public function getNextMowingDatetime($params) {
@@ -174,10 +177,11 @@ class BoschIndego extends eqLogic {
 // log::add('BoschIndego','debug',__FUNCTION__ .' Mowmode:' .$mowmode);
     if ( $mowmode == 1 ) { // mode manu demandé
       $mowNext = "Mode manuel";
+      $retVal = array('httpCode'=> 200, 'data'=> $mowNext);
       $this->CheckAndUpdateCmd('mowNext',$mowNext);
       $this->CheckAndUpdateCmd('mowNextTS',0);
       $this->cronNextMowDelete();
-      return;
+      return($retVal);
     }
     $cmd = $this->getCmd('info', 'mowNextTS');
     if (is_object($cmd)) $mowNextTS = $cmd->execCmd();
@@ -193,37 +197,30 @@ class BoschIndego extends eqLogic {
     $result = curl_exec($curl);
     $curlHttpCode = curl_getinfo($curl, CURLINFO_HTTP_CODE);
     curl_close($curl);
+    $retVal = array('httpCode'=> $curlHttpCode, 'data'=> $result);
+    $mowNext = "Mode manuel"; $dateTS = 0;
     if ( $curlHttpCode == 200 ) {
 // $this->writeData(__DIR__ ."/indego_dataNextMowingDatetime-" .$params['almSn'] .".json",$result);
       $dataJson = json_decode($result);
-      if ( $dataJson === null ) {
-        $mowNext = "Manuel";
-        $dateTS = 0;
-      }
-      else {
+      if ( $dataJson !== null ) {
         $dateTS = date_create_from_format("Y-m-d\TH:i:sP", $dataJson->mow_next);
         if ( $dateTS != false ) {
           $mowNext = strftime("%A %e %b %H:%M", $dateTS->getTimestamp());
           $dateTS = $dateTS->getTimestamp();
         }
-        else {
-          $mowNext = $dataJson->mow_next;
-          $dateTS = 0;
-        }
+        else
+          log::add(__CLASS__, 'debug', __FUNCTION__ .' DateFormat: ' .$dataJson->mow_next);
       }
       if($dateTS == 0) $this->cronNextMowDelete();
-      else $this->cronNextMowAdd($dateTS);
-      $this->CheckAndUpdateCmd('mowNext',$mowNext);
-      $this->CheckAndUpdateCmd('mowNextTS',$dateTS);
+      else $this->cronNextMowSet($dateTS);
     }
-    else {
-      $this->indegoLogCurl(__FUNCTION__,$curlHttpCode,$result);
-      $mowNext = "Mode manuel";
-      $dateTS = 0;
-    }
+    else log::add(__CLASS__, 'error', __FUNCTION__ .' Sn:' .$params['almSn'] .' HTTP_CODE: ' .$curlHttpCode);
+    $this->CheckAndUpdateCmd('mowNext',$mowNext);
+    $this->CheckAndUpdateCmd('mowNextTS',$dateTS);
+    return($retVal);
   }
 
-  public function cronNextMowAdd($TS) {
+  public function cronNextMowSet($TS) {
     log::add('BoschIndego','debug',__FUNCTION__);
     $cron = cron::byClassAndFunction('BoschIndego', 'cronNextMow');
     if (!is_object($cron)) {
@@ -280,6 +277,7 @@ class BoschIndego extends eqLogic {
     $result = curl_exec($curl);
     $curlHttpCode = curl_getinfo($curl, CURLINFO_HTTP_CODE);
     curl_close($curl);
+    $retVal = array('httpCode'=> $curlHttpCode, 'data'=> $result);
     if ( $curlHttpCode == 200 ) {
 // $this->writeData(__DIR__ ."/indego_dataAlerts.json",$result);
       $alerts = '';
@@ -295,7 +293,7 @@ class BoschIndego extends eqLogic {
       if($alerts == '') $alerts = "<div style=\"background-color:#2982b9;color:#ffffff;margin-top:2px;border-radius:5px;margin-right:5px;margin-left:5px;\"><span style=\"font-weight:bold;\">Pas d'alerte</span></div>";
       $this->CheckAndUpdateCmd('alerts',$alerts);
     }
-    else $this->indegoLogCurl(__FUNCTION__,$curlHttpCode,$result);
+    return($retVal);
   }
 
   public function getMap($params) {
@@ -309,6 +307,7 @@ class BoschIndego extends eqLogic {
     $result = curl_exec($curl);
     $curlHttpCode = curl_getinfo($curl, CURLINFO_HTTP_CODE);
     curl_close($curl);
+    $retVal = array('httpCode'=> $curlHttpCode, 'data'=> $result);
     if ( $curlHttpCode == 200 ) {
 // $this->writeData(__DIR__ ."/indego_dataMap-" .date('dmHi') ."-" .$params['almSn'] .".svg",$map);
         //
@@ -325,10 +324,7 @@ class BoschIndego extends eqLogic {
       $map = str_replace("</svg>","<circle cx=\"$xpos\" cy=\"$ypos\" r=\"14\" stroke=\"black\" stroke_width=\"3\" fill=\"green\" /></svg>",$map);
       $this->CheckAndUpdateCmd('map',$map);
     }
-    else {
-      $this->CheckAndUpdateCmd('map','');
-      $this->indegoLogCurl(__FUNCTION__,$curlHttpCode,$result);
-    }
+    return($retVal);
   }
 
   public function authenticate(&$params) {
@@ -362,8 +358,6 @@ class BoschIndego extends eqLogic {
       $params['userId'] = $json_data->userId;
       $params['almSn'] = $json_data->alm_sn; 
     }
-    else
-      $this->indegoLogCurl(__FUNCTION__,$curlHttpCode,$result);
     return($retVal);
   }
 
@@ -381,6 +375,7 @@ class BoschIndego extends eqLogic {
     $result = curl_exec($curl);
     $curlHttpCode = curl_getinfo($curl, CURLINFO_HTTP_CODE);
     curl_close($curl);
+    $retVal = array('httpCode'=> $curlHttpCode, 'data'=> $result);
     if ( $curlHttpCode == 200 ) {
 //$this->writeData(__DIR__ ."/indego_dataTokenCheckAuth".$params['almSn'].".json",$result);
         // MAJ des paramètre authentification
@@ -389,7 +384,7 @@ class BoschIndego extends eqLogic {
       $params['userId'] = $json_data->userId;
       // $params['almSn'] = $json_data->alm_sn; 
     }
-    else $this->indegoLogCurl(__FUNCTION__,$curlHttpCode,$result);
+    return($retVal);
   }
 
   public function deauthenticate() {
@@ -400,7 +395,9 @@ class BoschIndego extends eqLogic {
     $action = strtolower($action);
     $available_actions = array("mow", "pause", "returntodock");
     if(in_array($action, $available_actions)) {
-      $this->checkAuthentication($params);
+      $retVal = $this->checkAuthentication($params);
+      if($retVal['httpCode'] != 200)
+        throw new Exception(__('Erreur d\'authentification. Impossible d\'exécuter la commande : ' .$action, __FILE__));
       $data      = array("state" => $action);
       $data_json = json_encode($data);
       $url       = $params['api'] ."alms/" .$params['almSn'] ."/state";
@@ -416,8 +413,7 @@ class BoschIndego extends eqLogic {
       $result = curl_exec($curl);
       $curlHttpCode = curl_getinfo($curl, CURLINFO_HTTP_CODE);
       curl_close($curl);
-      if ( $curlHttpCode != 200 )
-        $this->indegoLogCurl(__FUNCTION__.": $action",$curlHttpCode,$result);
+      $retVal = array('httpCode'=> $curlHttpCode, 'data'=> $result);
         //
       $actionHttpCode = (($curlHttpCode == 200) ? "200-OK" : "$curlHttpCode-ERROR");
       $this->CheckAndUpdateCmd('actionHttpCode',$actionHttpCode);
@@ -431,23 +427,17 @@ class BoschIndego extends eqLogic {
     
       /*
         $date = date('d-m-Y H:i:s');
-        $json  = "{\n  \"http_code\" : \"";
+        $json  = "{\n  \"httpCode\" : \"";
         $json .= (($curlHttpCode == 200) ? "200-OK" : "$curlHttpCode-ERROR");
         $json .= "\",\n  \"date\" : \"$date\"\n}";
 $this->writeData(__DIR__ ."/indego_datadoAction.json",$json);
       */
+      return($retVal);
     }
     else {
       $msg = "Unsupported action : $action. Only ".implode(", ",$available_actions) ." are supported";
       log::add(__CLASS__,'debug', $msg);
     }
-  }
-
-  public function indegoLogCurl($function,$curlHttpCode,$result) {
-    $msg = $function .str_repeat(" ",30-strlen($function));
-    $msg .= ' HTTP_CODE : ' .$curlHttpCode;
-    if($result != '') $msg .= ' Result : ' .$result;
-    log::add(__CLASS__, 'error', $msg);
   }
 
   public function disableCalendar() {
@@ -478,13 +468,6 @@ $this->writeData(__DIR__ ."/indego_datadoAction.json",$json);
       $cmd->setType('info');
       $cmd->setSubType('string');
       $cmd->setIsVisible('1');
-      /*
-      $cmd->setIsHistorized(1);
-      $cmd->setTemplate("mobile",'line' );
-      $cmd->setTemplate("dashboard",'line' );
-      $cmd->setDisplay('icon', $_template);
-      $cmd->setConfiguration('type', $_type);
-       */
       $cmd->save();
       // $cmd->event(0);
     }
@@ -558,9 +541,8 @@ $this->writeData(__DIR__ ."/indego_datadoAction.json",$json);
         $cmd->setIsVisible('0');
         $cmd->save();
       }
-
         //
-      foreach (array("mow", "pause", "returntodock", "refresh", "authenticate", "cronSetEnableOn", "cronSetEnableOff") as $actionId) {
+      foreach (array("mow", "pause", "returntodock", "refresh", "cronSetEnableOn", "cronSetEnableOff") as $actionId) {
         $actionCmd = $this->getCmd('action', $actionId);
         $order++;
         if (!is_object($actionCmd)) {
@@ -595,7 +577,7 @@ $this->writeData(__DIR__ ."/indego_datadoAction.json",$json);
           $cmd->save();
         }
       }
-
+        //
       $cmdLogicalId = 'actionDate'; $order++;
       $cmd = $this->getCmd('info', $cmdLogicalId);
       if (!is_object($cmd)) {
@@ -619,7 +601,7 @@ $this->writeData(__DIR__ ."/indego_datadoAction.json",$json);
         $cmd->setOrder($order);
         $cmd->save();
       }
-
+        //
       $cmdLogicalId = 'totalOperate'; $order++;
       $cmd = $this->getCmd('info', $cmdLogicalId);
       if (!is_object($cmd)) {
@@ -664,7 +646,7 @@ $this->writeData(__DIR__ ."/indego_datadoAction.json",$json);
         $cmd->setSubType('numeric');
         $cmd->save();
       }
-
+        //
       $cmdLogicalId = 'map'; $order++;
       $cmd = $this->getCmd('info', $cmdLogicalId);
       if (!is_object($cmd)) {
@@ -696,7 +678,7 @@ $this->writeData(__DIR__ ."/indego_datadoAction.json",$json);
         $cmd->setIsVisible('0');
         $cmd->save();
       }
-
+        //
       $cmdLogicalId = 'alerts'; $order++;
       $cmd = $this->getCmd('info', $cmdLogicalId);
       if (!is_object($cmd)) {
@@ -779,16 +761,6 @@ class BoschIndegoCmd extends cmd {
     $password = $eqLogic->getConfiguration('password');
     $eqLogic->initParams($params,$username,$password,1);
     switch ($this->getLogicalId()) {
-      case "authenticate":
-        log::add('BoschIndego', 'debug', "Action " .$this->getLogicalId());
-        $eqLogic->authenticate($params);
-        log::add('BoschIndego', 'debug', "Username " .$params['username']);
-        log::add('BoschIndego', 'debug', "Password " .$params['password']);
-        log::add('BoschIndego', 'debug', "Api " .$params['api']);
-        log::add('BoschIndego', 'debug', "ContextId " .$params['contextId']);
-        log::add('BoschIndego', 'debug', "UserId " .$params['userId']);
-        log::add('BoschIndego', 'debug', "AlmSn " .$params['almSn']);
-        break;
       case "cronSetEnableOn":
         log::add('BoschIndego', 'debug', "Action " .$this->getLogicalId());
         $eqLogic->cronSetEnable(1);
@@ -811,9 +783,13 @@ class BoschIndegoCmd extends cmd {
         $eqLogic->doAction('returnToDock',$params);
         break;
       case "refresh":
-        $eqLogic->getInformation($params);
-          // Recup date prochaine tonte
-        $eqLogic->getNextMowingDatetime($params);
+        $retVal = $eqLogic->getInformation($params);
+        if($retVal['httpCode'] == 200) {
+          $ret2 = $eqLogic->getNextMowingDatetime($params); // Recup date prochaine tonte
+          if($ret2['httpCode'] != 200)
+            log::add(__CLASS__, 'error', 'getNextMowingDatetime  Sn:' .$params['almSn'] .' HTTP_CODE:' .$ret2['httpCode']);
+        }
+        else log::add(__CLASS__, 'error', 'Action:refresh  Sn:' .$params['almSn'] .' HTTP_CODE:' .$retVal['httpCode']);
         break;
       default:
         log::add('BoschIndego', 'error', "Unknown action " .$this->getLogicalId());
