@@ -146,7 +146,6 @@ class BoschIndego extends eqLogic {
         //
       $svg_yPos =  $dataJsonState->svg_yPos;
       $this->CheckAndUpdateCmd('svg_yPos',$svg_yPos);
-
         // test carte a mettre à jour
       $cmd = $this->getCmd('info', 'map');
       $prevMap = '';
@@ -154,7 +153,6 @@ class BoschIndego extends eqLogic {
       $Umap =  $dataJsonState->map_update_available;
       if ( $Umap || $prevMap == '')
         $this->getMap($params);
-
       $this->getAlerts($params);
         // Arret du cron si tondeuse sur station
       $cronState = $this->cronGetEnable();
@@ -170,7 +168,10 @@ class BoschIndego extends eqLogic {
   }
 
   public function getNextMowingDatetime($params) {
-    log::add('BoschIndego','debug',__FUNCTION__ .' Sn:' .$params['almSn']);
+    log::add(__CLASS__,'debug',__FUNCTION__ .' Sn:' .$params['almSn']);
+    $retVal = $this->checkAuthentication($params);
+    if($retVal['httpCode'] != 200)
+      throw new Exception(__('Erreur d\'authentification. Impossible d\'exécuter '.__FUNCTION__, __FILE__));
     $cmd = $this->getCmd('info', 'mowmode');
     if (is_object($cmd)) $mowmode = $cmd->execCmd();
     else $mowmode = 0;
@@ -214,7 +215,7 @@ class BoschIndego extends eqLogic {
       if($dateTS == 0) $this->cronNextMowDelete();
       else $this->cronNextMowSet($dateTS);
     }
-    else log::add(__CLASS__, 'error', __FUNCTION__ .' Sn:' .$params['almSn'] .' HTTP_CODE: ' .$curlHttpCode);
+    // else log::add(__CLASS__, 'error', __FUNCTION__ .' Sn:' .$params['almSn'] .' HttpCode: ' .$curlHttpCode);
     $this->CheckAndUpdateCmd('mowNext',$mowNext);
     $this->CheckAndUpdateCmd('mowNextTS',$dateTS);
     return($retVal);
@@ -382,7 +383,6 @@ class BoschIndego extends eqLogic {
       $json_data = json_decode($result);
       $params['contextId'] = $json_data->contextId;
       $params['userId'] = $json_data->userId;
-      // $params['almSn'] = $json_data->alm_sn; 
     }
     return($retVal);
   }
@@ -787,9 +787,9 @@ class BoschIndegoCmd extends cmd {
         if($retVal['httpCode'] == 200) {
           $ret2 = $eqLogic->getNextMowingDatetime($params); // Recup date prochaine tonte
           if($ret2['httpCode'] != 200)
-            log::add(__CLASS__, 'error', 'getNextMowingDatetime  Sn:' .$params['almSn'] .' HTTP_CODE:' .$ret2['httpCode']);
+            log::add('BoschIndego', 'error', 'getNextMowingDatetime  Sn:' .$params['almSn'] .' HttpCode:' .$ret2['httpCode']);
         }
-        else log::add(__CLASS__, 'error', 'Action:refresh  Sn:' .$params['almSn'] .' HTTP_CODE:' .$retVal['httpCode']);
+        else log::add('BoschIndego', 'error', 'Action:refresh  Sn:' .$params['almSn'] .' HttpCode:' .$retVal['httpCode']);
         break;
       default:
         log::add('BoschIndego', 'error', "Unknown action " .$this->getLogicalId());
