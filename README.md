@@ -19,7 +19,4 @@ En mode de tonte manuelle, au lancement de l'action Tondre, un daemon de surveil
 
 En mode de tonte programmée dans l'application Bosch, la date/heure de la prochaine tonte est récupérée par le plugin. Une entrée cron est créée pour lancer le daemon de surveillance au début de la tonte. En cas de modification de l'heure de tonte, il faut cliquer sur l'icone en haut à droite de la tuile pour synchroniser les données. 
 
-Les actions créées sont mow, pause, returntodock, refresh, cronSetEnableOn et cronSetEnableOff. Les 2 dernières actions sont pour le daemon de surveillance de la tonte.
-
-Attention aux doubles connexions appli téléphone et plugin Jeedom.
-Le résultat est des erreurs 401 (connexion refusée) coté plugin.
+Les actions créées par le plugin sont mow, pause, returntodock, refresh, cronSetEnableOn et cronSetEnableOff. Les 2 dernières actions sont pour le daemon de surveillance de la tonte.
