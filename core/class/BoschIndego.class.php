@@ -193,7 +193,6 @@ class BoschIndego extends eqLogic {
     $curlHttpCode = curl_getinfo($curl, CURLINFO_HTTP_CODE);
     curl_close($curl);
     $retVal =array('httpCode'=> $curlHttpCode, 'data'=> $result);
-    if($getJson) return($retVal);
      */
     if ( $curlHttpCode == 200 ) {
 // $this->writeData(__DIR__ ."/indego_dataGetInformation-" .$params['almSn'] .".json",$result);
@@ -400,20 +399,11 @@ class BoschIndego extends eqLogic {
     return($retVal);
   }
 
-  public function getMap($params,$getJson=0) {
+  public function getMap($params) {
     log::add(__CLASS__,'debug', __FUNCTION__ ." " .$params['almSn']);
-    $url = $params['api'] ."alms/" .$params['almSn'] ."/map";
-    $curl    = curl_init();
-    $headers = array('x-im-context-id: ' .$params['contextId']);
-    curl_setopt($curl, CURLOPT_HTTPHEADER, $headers);
-    curl_setopt($curl, CURLOPT_URL, $url);
-    curl_setopt($curl, CURLOPT_RETURNTRANSFER, true);
-    $result = curl_exec($curl);
-    $curlHttpCode = curl_getinfo($curl, CURLINFO_HTTP_CODE);
-    curl_close($curl);
-    $retVal =array('httpCode'=> $curlHttpCode, 'data'=> $result);
-    if($getJson) return($retVal);
-    if ( $curlHttpCode == 200 ) {
+    $retVal = $this->getJsonData($params,"/map");
+    $result = $retVal['data'];
+    if ( $retVal['httpCode'] == 200 ) {
 // $this->writeData(__DIR__ ."/indego_dataMap-" .date('dmHi') ."-" .$params['almSn'] .".svg",$result);
         //
       $map = $result;
@@ -620,9 +610,20 @@ $this->writeData(__DIR__ ."/indego_datadoAction.json",$json);
   public function postSave() {
     if (is_object($this)) {
       $logicId = $this->getId();
-      $cmdLogicalId = 'statusDate';
       $order = 100;
         //
+      $cmdLogicalId = 'cronState'; $order++;
+      $cmd = $this->getCmd('info', $cmdLogicalId);
+      if (!is_object($cmd)) {
+        $cmd = $this->creationCmd($logicId,$cmdLogicalId,'Daemon surveillance');
+        // $cmd->setTemplate("dashboard",'line');
+        $cmd->setOrder(1); // $order);
+        $cmd->setSubType('binary');
+        // $cmd->setIsVisible('1');
+        $cmd->save();
+      }
+        //
+      $cmdLogicalId = 'statusDate'; $order++;
       $cmd = $this->getCmd('info', $cmdLogicalId);
       if (!is_object($cmd)) {
         $cmd = $this->creationCmd($logicId,$cmdLogicalId,'Date état');
@@ -789,6 +790,16 @@ $this->writeData(__DIR__ ."/indego_datadoAction.json",$json);
         $cmd->save();
       }
         //
+      $cmdLogicalId = 'alerts'; $order++;
+      $cmd = $this->getCmd('info', $cmdLogicalId);
+      if (!is_object($cmd)) {
+        $cmd = $this->creationCmd($logicId,$cmdLogicalId,'Dernier message');
+        $cmd->setDisplay("forceReturnLineBefore","1");
+        $cmd->setDisplay("showNameOndashboard","0");
+        $cmd->setOrder($order);
+        $cmd->save();
+      }
+        //
       $cmdLogicalId = 'map'; $order++;
       $cmd = $this->getCmd('info', $cmdLogicalId);
       if (!is_object($cmd)) {
@@ -818,27 +829,6 @@ $this->writeData(__DIR__ ."/indego_datadoAction.json",$json);
         $cmd->setOrder($order);
         $cmd->setSubType('numeric');
         $cmd->setIsVisible('0');
-        $cmd->save();
-      }
-        //
-      $cmdLogicalId = 'alerts'; $order++;
-      $cmd = $this->getCmd('info', $cmdLogicalId);
-      if (!is_object($cmd)) {
-        $cmd = $this->creationCmd($logicId,$cmdLogicalId,'Dernier message');
-        $cmd->setDisplay("forceReturnLineBefore","1");
-        $cmd->setDisplay("showNameOndashboard","0");
-        $cmd->setOrder($order);
-        $cmd->save();
-      }
-        //
-      $cmdLogicalId = 'cronState'; $order++;
-      $cmd = $this->getCmd('info', $cmdLogicalId);
-      if (!is_object($cmd)) {
-        $cmd = $this->creationCmd($logicId,$cmdLogicalId,'Daemon surveillance');
-        // $cmd->setTemplate("dashboard",'line');
-        $cmd->setOrder(1); // $order);
-        $cmd->setSubType('binary');
-        $cmd->setIsVisible('1');
         $cmd->save();
       }
     }

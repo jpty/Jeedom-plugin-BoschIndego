@@ -71,5 +71,10 @@ function BoschIndego_remove() {
       log::add('BoschIndego','debug',__FUNCTION__ .' Removing cronBoschIndego entry');
       $cron->remove();
   }
+  $cron = cron::byClassAndFunction('BoschIndego', 'cronNextMow');
+  if (is_object($cron)) {
+      log::add('BoschIndego','debug',__FUNCTION__ .' Removing cronNextMow entry');
+      $cron->remove();
+  }
 }
 
