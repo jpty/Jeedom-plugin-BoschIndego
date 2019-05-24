@@ -9,8 +9,8 @@
 	"hasDependency" : false,
 	"hasOwnDeamon" : false,
 	"maxDependancyInstallTime" : 0,
-	"changelog" : "https://github.com/jpty/Jeedom-plugin-BoschIndego/blob/master/README.md#changelog",
-	"documentation" : "https://github.com/jpty/Jeedom-plugin-BoschIndego/blob/master/README.md",
+	"changelog" : "https://jpty.github.io/jeedom/plugins/BoschIndego/fr_FR/changelog.html",
+	"documentation" : "https://jpty.github.io/jeedom/plugins/BoschIndego/fr_FR/index.html",
 	"link" : {
 		"forum":"Lien vers le forum",
 		"video" : "Lien vers une video"
