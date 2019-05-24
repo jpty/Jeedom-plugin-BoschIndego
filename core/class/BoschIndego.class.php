@@ -69,14 +69,26 @@ class BoschIndego extends eqLogic {
   public function getJson($json)
   { foreach (eqLogic::byType(__CLASS__, true) as $eqLogic) {
       $eqLogic->initParams($params);
-      if ($json == 1) echo "<h2>BoschIndego Sn: " .$params['almSn'] ."</h2>\n";
+      if ($json == 1) {
+        if ($params['almSn'] == '') {
+          echo "<h2>Numéro de série de l'équipement non sélectionné</h2>\n";
+          continue;
+        }
+        else
+          echo "<h2>BoschIndego Sn: " .$params['almSn'] ."</h2>\n";
+      }
       else if ($json == 2)
       { $file = "BoschIndegoJson.txt";
         header("Content-Disposition: attachment; filename=\"BoschIndegoJson.txt\"");
         header("Content-Type: application/octet-stream;");
         header("Cache-Control: no-cache, must-revalidate");
         header("Expires: Mon, 21 Jan 2019 04:15:00 GMT"); // Date in the past
-        echo "BoschIndego Sn: " .$params['almSn'] ."\n";
+        if ($params['almSn'] == '') {
+          echo "Numéro de série de l'équipement non sélectionné\n";
+          continue;
+        }
+        else
+          echo "BoschIndego Sn: " .$params['almSn'] ."\n";
       }
       $retVal = $eqLogic->checkAuthentication($params);
       if($retVal['httpCode'] == 200) {
@@ -608,6 +620,7 @@ $this->writeData(__DIR__ ."/indego_datadoAction.json",$json);
   }
 
   public function postSave() {
+    log::add(__CLASS__,'debug', __FUNCTION__);
     if (is_object($this)) {
       $logicId = $this->getId();
       $order = 100;
@@ -830,6 +843,15 @@ $this->writeData(__DIR__ ."/indego_datadoAction.json",$json);
         $cmd->setSubType('numeric');
         $cmd->setIsVisible('0');
         $cmd->save();
+      }
+        // demarrage cron pour synchro
+      if ($this->getIsEnable() == 1) {
+        $almSn = $this->getConfiguration('almSn');
+        if($almSn != '')  {
+          $this->cronBoschIndego();
+          // log::add(__CLASS__,'error', __FUNCTION__."Starting cron Sn: [$almSn]");
+        }
+        else log::add(__CLASS__,'error', "Numéro de série non sélectionné");
       }
     }
   }
