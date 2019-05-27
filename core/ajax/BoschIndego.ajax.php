@@ -24,7 +24,17 @@ try {
         throw new Exception(__('401 - Accès non autorisé', __FILE__));
     }
     
-    ajax::init();
+    // ajax::init();
+    if (init('action') == 'removeAlertMsg') {
+      if (!isConnect('admin')) {
+        throw new Exception(__('401 - Accès non autorisé', __FILE__));
+      }
+      $event = calendar_event::byId(init('id'));
+      if (!is_object($event)) {
+        throw new Exception(__('Aucun évènement correspondant à : ', __FILE__) . init('id'));
+      }
+      ajax::success();
+  }
 
     throw new Exception(__('Aucune méthode correspondante à : ', __FILE__) . init('action'));
     /*     * *********Catch exeption*************** */

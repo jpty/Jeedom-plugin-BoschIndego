@@ -1,0 +1,35 @@
+<div style="background-color: #background_color#;color: #text_color#; margin-top : 2px; -moz-border-radius: 5px;-webkit-border-radius: 5px; border-radius: 5px;margin-right : 5px;margin-left : 5px;">
+    <i class="fas fa-times pull-left cursor removeEvent" data-uid="#uid#" style="margin-top : 12px;margin-left: 2px;"></i>
+    <span style="font-weight: bold;">#name#</span><br/>
+    <span style="font-size : 0.7em;">#start# - #end#</span>
+    <script>
+        $('.removeEvent[data-uid=#uid#]').on('click', function() {
+            bootbox.confirm('Etes-vous sûr de vouloir supprimer ce message ?', function(result) {
+                if (result) {
+                    $.ajax({
+                        type: 'POST',
+                        url: 'plugins/BoschIndego/core/ajax/BoschIndego.ajax.php',
+                        data: {
+                            action: 'removeAlert',
+                            id: '#event_id#',
+                            date: '#date#'
+                        },
+                        dataType: 'json',
+                        error: function(request, status, error) {
+                            handleAjaxError(request, status, error, $('#div_eventEditAlert'));
+                        },
+                        success: function(data) {
+                            if (data.state != 'ok') {
+                                $('#div_eventEditAlert').showAlert({message: data.result, level: 'danger'});
+                                return;
+                            }
+                            $('.removeEvent[data-uid=#uid#]').parent().remove();
+                        }
+                    });
+                }
+            });
+        });
+    </script>
+</div>
+
+

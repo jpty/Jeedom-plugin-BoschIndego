@@ -57,7 +57,8 @@ class BoschIndego extends eqLogic {
       $eqLogic->getNextMowingDatetime($params);
     }
   }
-  public function cronBoschIndego() {
+    // cron surveillance etat tondeuse
+  public function cron() {
     // log::add(__CLASS__,'debug', __FUNCTION__);
     foreach (eqLogic::byType(__CLASS__, true) as $eqLogic) {
       $eqLogic->initParams($params);
@@ -159,28 +160,17 @@ class BoschIndego extends eqLogic {
     }
   }
 
+    // Activation / Desactivation cron surveillance
   public function cronSetEnable($enable) {
-    log::add(__CLASS__,'debug', __FUNCTION__ .' ' .($enable)?"On":"Off");
-    $cron = cron::byClassAndFunction('BoschIndego', 'cronBoschIndego');
-    if (is_object($cron)) {
-      $cron->setEnable($enable);
-      $cron->save();
-      if ( $enable ) $this->CheckAndUpdateCmd('state',262);
-      return($this->cronGetEnable());
-    }
-    else log::add(__CLASS__,'error',__FUNCTION__ .' cronBoschIndego not found');
-    return(-1);
+    log::add(__CLASS__,'debug', __FUNCTION__ .' ' .(($enable)?"On":"Off"));
+    config::save('functionality::cron::enable', $enable, __CLASS__);
+    if ( $enable ) $this->CheckAndUpdateCmd('state',262);
+    return($this->cronGetEnable());
   }
 
   public function cronGetEnable() {
-    $cron = cron::byClassAndFunction('BoschIndego', 'cronBoschIndego');
-    if (is_object($cron)) {
-      $status = $cron->getEnable(0);
-    }
-    else {
-      log::add(__CLASS__,'error',__FUNCTION__ .' cronBoschIndego not found');
-      $status = -1;
-    }
+    $status = config::byKey('functionality::cron::enable', __CLASS__);
+    // log::add(__CLASS__, 'debug', 'Status: '.$status);
     $this->CheckAndUpdateCmd('cronState',$status);
     return($status);
   }
@@ -225,7 +215,7 @@ class BoschIndego extends eqLogic {
         //
       // $statusDate =  date('d-m-Y H:i:s');
       setlocale(LC_TIME,"fr_FR.utf8");
-      $statusDate = strftime("%A %e %b %H:%M:%S", time());
+      $statusDate = ucfirst(strftime("%a %e %b %H:%M:%S", time()));
       $this->CheckAndUpdateCmd('statusDate',$statusDate);
         //
       $totalOperate =  $dataJsonState->runtime->total->operate;
@@ -307,7 +297,7 @@ class BoschIndego extends eqLogic {
       if ( $dataJson !== null ) {
         $dateTS = date_create_from_format("Y-m-d\TH:i:sP", $dataJson->mow_next);
         if ( $dateTS != false ) {
-          $mowNext = strftime("%A %e %b %H:%M", $dateTS->getTimestamp());
+          $mowNext = ucfirst(strftime("%a %e %b %H:%M", $dateTS->getTimestamp()));
           $dateTS = $dateTS->getTimestamp();
         }
         else
@@ -367,15 +357,26 @@ class BoschIndego extends eqLogic {
     // date_default_timezone_set($tz);
     $ts = strtotime($alert->date); // + $seconds;
     setlocale(LC_TIME,"fr_FR.utf8");
-    $date = strftime("%A %e %b %H:%M:%S", $ts);
+    $date = ucfirst(strftime("%a %e %b %H:%M:%S", $ts));
     $headline = $alert->headline;
     $error_code = $alert->error_code;
     $message = $alert->message;
+      // message sur une seule ligne de texte. Sinon erreur javascript
+    $message = str_replace("\n","",$message);
     // return($date .' ' .$headline .' ' .$error_code .' ' .$message);
     $uid = $alert->alert_id;
-    // $msg = "<div style=\"background-color:#2982b9;color:#ffffff;margin-top:2px;border-radius:5px;margin-right:5px;margin-left:5px;\"><i class=\"fas fa-times pull-left cursor removeEvent\" data-uid=\"$uid\" style=\"margin-top:12px;margin-left:2px;\"></i><span style=\"font-weight:bold;\">$date<br/>$headline Code: $error_code<br/></span>";
+    // $msg = "<div style=\"background-color:#2982b9;color:#ffffff;margin-top:2px;border-radius:5px;margin-right:5px;margin-left:5px;\"><i class=\"fas fa-times pull-left cursor removeAlertMsg\" data-uid=\"$uid\" style=\"margin-top:12px;margin-left:2px;\"></i><span style=\"font-weight:bold;\">$date<br/>$headline Code: $error_code<br/></span>";
     $msg = "<div style=\"background-color:#2982b9;color:#ffffff;margin-top:2px;border-radius:5px;margin-right:5px;margin-left:5px;\"><span style=\"font-weight:bold;\">$date<br/>$headline Code: $error_code<br/></span>";
     $msg .= "<span style=\"font-size:0.8em;font-weight:normal;line-height:0.8em;\">" .$message ."</span>";
+    
+    /*
+    $msg.="<script> $('.removeAlertMsg[data-uid=$uid]').on('click', function() { bootbox.confirm('Etes-vous sûr de vouloir supprimer ce message ?', function(result) { if (result) { $.ajax({ type: 'POST', url: 'plugins/BoschIndego/core/ajax/BoschIndego.ajax.php', data: { action: 'removeAlertMsg', id: '" .$uid ."', },";
+
+    $msg .= " dataType: 'json', error: function(request, status, error) { handleAjaxError(request, status, error, $('#div_eventEditAlert')); },";
+      $msg .= " success: function(data) { if (data.state != 'ok') { $('#div_eventEditAlert').showAlert({message: data.result, level: 'danger'}); return; } $('.removeEvent[data-uid=".$uid."]').parent().remove(); }";
+                   
+    $msg .= " }); } }); });</script>";
+*/ 
     $msg .= "</div>";
     return($msg);
   }
@@ -564,7 +565,7 @@ class BoschIndego extends eqLogic {
       $this->CheckAndUpdateCmd('actionHttpCode',$actionHttpCode);
         //
       setlocale(LC_TIME,"fr_FR.utf8");
-      $actionDate = strftime("%A %e %b %H:%M:%S", time());
+      $actionDate = ucfirst(strftime("%a %e %b %H:%M:%S", time()));
       $this->CheckAndUpdateCmd('actionDate',$actionDate);
         //
       $actionLast = $action;
@@ -614,7 +615,6 @@ $this->writeData(__DIR__ ."/indego_datadoAction.json",$json);
       $cmd->setSubType('string');
       $cmd->setIsVisible('1');
       $cmd->save();
-      // $cmd->event(0);
     }
     return($cmd);
   }
@@ -848,7 +848,7 @@ $this->writeData(__DIR__ ."/indego_datadoAction.json",$json);
       if ($this->getIsEnable() == 1) {
         $almSn = $this->getConfiguration('almSn');
         if($almSn != '')  {
-          $this->cronBoschIndego();
+          $this->cron();
           // log::add(__CLASS__,'error', __FUNCTION__."Starting cron Sn: [$almSn]");
         }
         else log::add(__CLASS__,'error', "Numéro de série non sélectionné");

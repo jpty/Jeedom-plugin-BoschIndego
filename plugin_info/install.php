@@ -19,17 +19,6 @@
 require_once __DIR__ . '/../../../core/php/core.inc.php';
 
 function BoschIndego_install() {
-  $cron = cron::byClassAndFunction('BoschIndego', 'cronBoschIndego');
-  if (!is_object($cron)) {
-    log::add('BoschIndego','debug',__FUNCTION__ .' Creating cronBoschIndego entry');
-    $cron = new cron();
-    $cron->setClass('BoschIndego');
-    $cron->setFunction('cronBoschIndego');
-    $cron->setEnable(0);
-    $cron->setDeamon(0);
-    $cron->setSchedule('* * * * *');
-    $cron->save();
-  }
   BoschIndego_copyTemplate();
 }
 
@@ -51,18 +40,7 @@ function BoschIndego_copyTemplate() {
 }
 
 function BoschIndego_update() {
-  $cron = cron::byClassAndFunction('BoschIndego', 'cronBoschIndego');
-  if (!is_object($cron)) {
-    log::add('BoschIndego','debug',__FUNCTION__ .' Creating cronBoschIndego entry');
-    $cron = new cron();
-    $cron->setClass('BoschIndego');
-    $cron->setFunction('cronBoschIndego');
-    $cron->setEnable(0);
-    $cron->setDeamon(0);
-    $cron->setSchedule('* * * * *');
-    $cron->save();
-  }
-  // BoschIndego_copyTemplate();
+  BoschIndego_copyTemplate();
 }
 
 function BoschIndego_remove() {
