@@ -164,14 +164,14 @@ class BoschIndego extends eqLogic {
   public function cronSetEnable($enable) {
     log::add(__CLASS__,'debug', __FUNCTION__ .' ' .(($enable)?"On":"Off"));
     config::save('functionality::cron::enable', $enable, __CLASS__);
-    if ( $enable ) $this->CheckAndUpdateCmd('state',262);
+    if ( $enable ) $this->checkAndUpdateCmd('state',262);
     return($this->cronGetEnable());
   }
 
   public function cronGetEnable() {
     $status = config::byKey('functionality::cron::enable', __CLASS__);
     // log::add(__CLASS__, 'debug', 'Status: '.$status);
-    $this->CheckAndUpdateCmd('cronState',$status);
+    $this->checkAndUpdateCmd('cronState',$status);
     return($status);
   }
 
@@ -205,36 +205,36 @@ class BoschIndego extends eqLogic {
       else $prevState = 0;
       $state =  $dataJsonState->state;
       if( $state == 64513) $state = 258;
-      $this->CheckAndUpdateCmd('state',$state);
+      $this->checkAndUpdateCmd('state',$state);
         //
       $mowed =  $dataJsonState->mowed;
-      $this->CheckAndUpdateCmd('mowed',$mowed);
+      $this->checkAndUpdateCmd('mowed',$mowed);
         //
       $mowmode =  $dataJsonState->mowmode;
-      $this->CheckAndUpdateCmd('mowmode',$mowmode);
+      $this->checkAndUpdateCmd('mowmode',$mowmode);
         //
       // $statusDate =  date('d-m-Y H:i:s');
       setlocale(LC_TIME,"fr_FR.utf8");
       $statusDate = ucfirst(strftime("%a %e %b %H:%M:%S", time()));
-      $this->CheckAndUpdateCmd('statusDate',$statusDate);
+      $this->checkAndUpdateCmd('statusDate',$statusDate);
         //
       $totalOperate =  $dataJsonState->runtime->total->operate;
-      $this->CheckAndUpdateCmd('totalOperate',$totalOperate);
+      $this->checkAndUpdateCmd('totalOperate',$totalOperate);
         //
       $totalCharge =  $dataJsonState->runtime->total->charge;
-      $this->CheckAndUpdateCmd('totalCharge',$totalCharge);
+      $this->checkAndUpdateCmd('totalCharge',$totalCharge);
         //
       $sessionOperate =  $dataJsonState->runtime->session->operate;
-      $this->CheckAndUpdateCmd('sessionOperate',$sessionOperate);
+      $this->checkAndUpdateCmd('sessionOperate',$sessionOperate);
         //
       $sessionCharge =  $dataJsonState->runtime->session->charge;
-      $this->CheckAndUpdateCmd('sessionCharge',$sessionCharge);
+      $this->checkAndUpdateCmd('sessionCharge',$sessionCharge);
         //
       $svg_xPos =  $dataJsonState->svg_xPos;
-      $this->CheckAndUpdateCmd('svg_xPos',$svg_xPos);
+      $this->checkAndUpdateCmd('svg_xPos',$svg_xPos);
         //
       $svg_yPos =  $dataJsonState->svg_yPos;
-      $this->CheckAndUpdateCmd('svg_yPos',$svg_yPos);
+      $this->checkAndUpdateCmd('svg_yPos',$svg_yPos);
         // test carte a mettre à jour
       $cmd = $this->getCmd('info', 'map');
       $prevMap = '';
@@ -265,12 +265,12 @@ class BoschIndego extends eqLogic {
     $cmd = $this->getCmd('info', 'mowmode');
     if (is_object($cmd)) $mowmode = $cmd->execCmd();
     else $mowmode = 0;
-// log::add('BoschIndego','debug',__FUNCTION__ .' Mowmode:' .$mowmode);
+// log::add(__CLASS__,'debug',__FUNCTION__ .' Mowmode:' .$mowmode);
     if ( $mowmode == 1 ) { // mode manu demandé
       $mowNext = "Mode manuel";
       $retVal = array('httpCode'=> 200, 'data'=> $mowNext);
-      $this->CheckAndUpdateCmd('mowNext',$mowNext);
-      $this->CheckAndUpdateCmd('mowNextTS',0);
+      $this->checkAndUpdateCmd('mowNext',$mowNext);
+      $this->checkAndUpdateCmd('mowNextTS',0);
       $this->cronNextMowDelete();
       return($retVal);
     }
@@ -306,23 +306,23 @@ class BoschIndego extends eqLogic {
       $this->cronNextMowSet($dateTS);
     }
     // else log::add(__CLASS__, 'error', __FUNCTION__ .' Sn:' .$params['almSn'] .' HttpCode: ' .$curlHttpCode);
-    $this->CheckAndUpdateCmd('mowNext',$mowNext);
-    $this->CheckAndUpdateCmd('mowNextTS',$dateTS);
+    $this->checkAndUpdateCmd('mowNext',$mowNext);
+    $this->checkAndUpdateCmd('mowNextTS',$dateTS);
     return($retVal);
   }
 
   public function cronNextMowSet($TS) {
-    log::add('BoschIndego','debug',__FUNCTION__);
+    log::add(__CLASS__,'debug',__FUNCTION__);
     if($TS == 0) {
       $this->cronNextMowDelete();
       return;
     }
-    $cron = cron::byClassAndFunction('BoschIndego', 'cronNextMow');
+    $cron = cron::byClassAndFunction(__CLASS__, 'cronNextMow');
     $newSchedule = date('i',$TS) .' ' .date('H',$TS) .' ' .date('d',$TS) .' ' .date('m',$TS) .' * ' .date('Y',$TS);
     if (!is_object($cron)) {
-      log::add('BoschIndego','debug',__FUNCTION__ .' Creating cronNextMow entry');
+      log::add(__CLASS__,'debug',__FUNCTION__ .' Creating cronNextMow entry');
       $cron = new cron();
-      $cron->setClass('BoschIndego');
+      $cron->setClass(__CLASS__);
       $cron->setFunction('cronNextMow');
       $cron->setEnable(1);
       $cron->setOnce(1);
@@ -341,16 +341,16 @@ class BoschIndego extends eqLogic {
   }
 
   public function cronNextMowDelete() {
-    log::add('BoschIndego','debug',__FUNCTION__);
-    $cron = cron::byClassAndFunction('BoschIndego', 'cronNextMow');
+    log::add(__CLASS__,'debug',__FUNCTION__);
+    $cron = cron::byClassAndFunction(__CLASS__, 'cronNextMow');
     if (is_object($cron)) {
-      log::add('BoschIndego','debug',__FUNCTION__ .' Removing cronNextMow entry');
+      log::add(__CLASS__,'debug',__FUNCTION__ .' Removing cronNextMow entry');
       $cron->remove();
     }
   }
 
   public function messageAlert($alert) {
-    log::add(__CLASS__,'debug', __FUNCTION__);
+    // log::add(__CLASS__,'debug', __FUNCTION__);
     // $tz = date_default_timezone_get();
     // date_default_timezone_set( "UTC" );
     // $seconds = timezone_offset_get( timezone_open($tz), new DateTime() );
@@ -407,7 +407,7 @@ class BoschIndego extends eqLogic {
         }
       }
       if($alerts == '') $alerts = "<div style=\"background-color:#2982b9;color:#ffffff;margin-top:2px;border-radius:5px;margin-right:5px;margin-left:5px;\"><span style=\"font-weight:bold;\">Pas d'alerte</span></div>";
-      $this->CheckAndUpdateCmd('alerts',$alerts);
+      $this->checkAndUpdateCmd('alerts',$alerts);
     }
     return($retVal);
   }
@@ -430,7 +430,7 @@ class BoschIndego extends eqLogic {
       $map = str_replace("\n","",$map);
         // ajout de la position de la tondeuse sur la carte
       $map = str_replace("</svg>","<circle cx=\"$xpos\" cy=\"$ypos\" r=\"14\" stroke=\"black\" stroke_width=\"3\" fill=\"green\" /></svg>",$map);
-      $this->CheckAndUpdateCmd('map',$map);
+      $this->checkAndUpdateCmd('map',$map);
     }
     return($retVal);
   }
@@ -562,14 +562,14 @@ class BoschIndego extends eqLogic {
       $retVal = array('httpCode'=> $curlHttpCode, 'data'=> $result);
         //
       $actionHttpCode = (($curlHttpCode == 200) ? "200-OK" : "$curlHttpCode-ERROR");
-      $this->CheckAndUpdateCmd('actionHttpCode',$actionHttpCode);
+      $this->checkAndUpdateCmd('actionHttpCode',$actionHttpCode);
         //
       setlocale(LC_TIME,"fr_FR.utf8");
       $actionDate = ucfirst(strftime("%a %e %b %H:%M:%S", time()));
-      $this->CheckAndUpdateCmd('actionDate',$actionDate);
+      $this->checkAndUpdateCmd('actionDate',$actionDate);
         //
       $actionLast = $action;
-      $this->CheckAndUpdateCmd('actionLast',$actionLast);
+      $this->checkAndUpdateCmd('actionLast',$actionLast);
     
       /*
         $date = date('d-m-Y H:i:s');
@@ -648,7 +648,10 @@ $this->writeData(__DIR__ ."/indego_datadoAction.json",$json);
       $cmd = $this->getCmd('info', $cmdLogicalId);
       if (!is_object($cmd)) {
         $cmd = $this->creationCmd($logicId,$cmdLogicalId,'Etat');
-        $cmd->setTemplate("dashboard",'BoschIndegoStateV3');
+        if ( version_compare(jeedom::version(), "4", "<"))
+          $cmd->setTemplate("dashboard",'BoschIndegoStateV3');
+        else
+          $cmd->setTemplate('dashboard', 'BoschIndego::BoschIndegoStateV4');
         $cmd->setIsHistorized(1);
         $cmd->setConfiguration("historizeMode","none");
         $cmd->setConfiguration("repeatEventManagement","always");
@@ -718,7 +721,7 @@ $this->writeData(__DIR__ ."/indego_datadoAction.json",$json);
             $cmd->setName('Retour station');
           }
           else if($actionId == 'refresh') {
-            $cmd->setName('Rafraichir');
+            $cmd->setName('Rafraîchir');
           }
           else {
             $cmd->setName($actionId);
@@ -764,7 +767,10 @@ $this->writeData(__DIR__ ."/indego_datadoAction.json",$json);
         $cmd = $this->creationCmd($logicId,$cmdLogicalId,'Durée fonctionnement');
         $cmd->setDisplay("forceReturnLineBefore","1");
         $cmd->setUnite('min');
-        $cmd->setTemplate("dashboard",'BoschIndegoDureeV3');
+        if ( version_compare(jeedom::version(), "4", "<"))
+          $cmd->setTemplate("dashboard",'BoschIndegoDureeV3');
+        else
+          $cmd->setTemplate('dashboard', 'BoschIndego::BoschIndegoDureeHmV4');
         $cmd->setOrder($order);
         $cmd->setSubType('numeric');
         $cmd->save();
@@ -775,7 +781,10 @@ $this->writeData(__DIR__ ."/indego_datadoAction.json",$json);
       if (!is_object($cmd)) {
         $cmd = $this->creationCmd($logicId,$cmdLogicalId,'Durée totale charge');
         $cmd->setUnite('min');
-        $cmd->setTemplate("dashboard",'BoschIndegoDureeV3');
+        if ( version_compare(jeedom::version(), "4", "<"))
+          $cmd->setTemplate("dashboard",'BoschIndegoDureeV3');
+        else
+          $cmd->setTemplate('dashboard', 'BoschIndego::BoschIndegoDureeHmV4');
         $cmd->setOrder($order);
         $cmd->setSubType('numeric');
         $cmd->save();
@@ -786,7 +795,10 @@ $this->writeData(__DIR__ ."/indego_datadoAction.json",$json);
       if (!is_object($cmd)) {
         $cmd = $this->creationCmd($logicId,$cmdLogicalId,'Durée dernière tonte');
         $cmd->setUnite('min');
-        $cmd->setTemplate("dashboard",'BoschIndegoDureeV3');
+        if ( version_compare(jeedom::version(), "4", "<"))
+          $cmd->setTemplate("dashboard",'BoschIndegoDureeV3');
+        else
+          $cmd->setTemplate('dashboard', 'BoschIndego::BoschIndegoDureeHmV4');
         $cmd->setOrder($order);
         $cmd->setSubType('numeric');
         $cmd->save();
@@ -796,7 +808,10 @@ $this->writeData(__DIR__ ."/indego_datadoAction.json",$json);
       $cmd = $this->getCmd('info', $cmdLogicalId);
       if (!is_object($cmd)) {
         $cmd = $this->creationCmd($logicId,$cmdLogicalId,'Durée charge session');
-        $cmd->setTemplate("dashboard",'BoschIndegoDureeV3');
+        if ( version_compare(jeedom::version(), "4", "<"))
+          $cmd->setTemplate("dashboard",'BoschIndegoDureeV3');
+        else
+          $cmd->setTemplate('dashboard', 'BoschIndego::BoschIndegoDureeHmV4');
         $cmd->setUnite('min');
         $cmd->setOrder($order);
         $cmd->setSubType('numeric');
@@ -818,7 +833,10 @@ $this->writeData(__DIR__ ."/indego_datadoAction.json",$json);
       if (!is_object($cmd)) {
         $cmd = $this->creationCmd($logicId,$cmdLogicalId,'Carte pelouse');
         $cmd->setDisplay("forceReturnLineBefore","1");
-        $cmd->setTemplate("dashboard",'BoschIndegoSvgV3');
+        if ( version_compare(jeedom::version(), "4", "<"))
+          $cmd->setTemplate("dashboard",'BoschIndegoSvgV3');
+        else
+          $cmd->setTemplate('dashboard', 'BoschIndego::BoschIndegoSvgV4');
         $cmd->setOrder($order);
         $cmd->save();
       }
@@ -939,6 +957,7 @@ class BoschIndegoCmd extends cmd {
       case "refresh":
         $retVal = $eqLogic->getInformation($params);
         if($retVal['httpCode'] == 200) {
+          $eqLogic->getMap($params);
           $ret2 = $eqLogic->getNextMowingDatetime($params); // Recup date prochaine tonte
           if($ret2['httpCode'] != 200)
             log::add('BoschIndego', 'error', 'getNextMowingDatetime  Sn:' .$params['almSn'] .' HttpCode:' .$ret2['httpCode']);
