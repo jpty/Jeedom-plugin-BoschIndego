@@ -1,6 +1,6 @@
 {
 	"id" : "BoschIndego",
-	"name" : "BoschIndego",
+	"name" : "Bosch Indego",
 	"description" : "Plugin pour les robots de tonte Bosch Indego",
 	"licence" : "AGPL",
 	"author" : "jpty",
@@ -11,10 +11,6 @@
 	"maxDependancyInstallTime" : 0,
 	"changelog" : "https://jpty.github.io/jeedom/plugins/BoschIndego/fr_FR/changelog.html",
 	"documentation" : "https://jpty.github.io/jeedom/plugins/BoschIndego/fr_FR/index.html",
-	"link" : {
-		"forum":"Lien vers le forum",
-		"video" : "Lien vers une video"
-	},
-	"language" : ["fr_FR","en_US","de_DE","sp_SP","ru_RU","id_ID","it_IT"],
-	"compatibility" : ["miniplus","smart","rpi","docker","diy","mobile"]
+	"language" : ["fr_FR"],
+	"compatibility" : ["smart"]
 }
