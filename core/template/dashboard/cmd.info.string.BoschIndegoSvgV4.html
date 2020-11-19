@@ -1,6 +1,11 @@
 <div class="cmd cmd-widget #history#" data-type="info" data-subtype="string" data-template="default" data-cmd_id="#id#" data-cmd_uid="#uid#" data-version="#version#" data-eqLogic_id="#eqLogic_id#">
   <div class="cmdName #hide_name# content-xs">#name_display#</div><br/>
   <div class="state svgBosch#id#" style="max-width:400px;position:relative;z-index:-1"></div>
+  <style>
+    div.svgBosch#id# svg {
+      transform: rotate(#rotateSvg#deg);
+    }
+  </style>
   <script>
     jeedom.cmd.update['#id#'] = function(_options) {
       var cmd = $('.cmd[data-cmd_id=#id#]')
