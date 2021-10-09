@@ -50,7 +50,7 @@ class BoschIndego extends eqLogic {
 
 
     // pour mise a jour des heures de tonte si modif prog en cours de journee sans refresh
-  public function cronDaily() {
+  public static function cronDaily() {
     // log::add(__CLASS__,'debug', __FUNCTION__);
     foreach (eqLogic::byType(__CLASS__, true) as $eqLogic) {
       $eqLogic->initParams($params);
@@ -58,7 +58,7 @@ class BoschIndego extends eqLogic {
     }
   }
     // cron surveillance etat tondeuse
-  public function cron() {
+  public static function cron() {
     // log::add(__CLASS__,'debug', __FUNCTION__);
     foreach (eqLogic::byType(__CLASS__, true) as $eqLogic) {
       $eqLogic->initParams($params);
@@ -538,8 +538,8 @@ class BoschIndego extends eqLogic {
 
   public function doAction($action,$params) {
     log::add(__CLASS__,'debug', __FUNCTION__);
-    $action = strtolower($action);
-    $available_actions = array("mow", "pause", "returntodock");
+    // $action = strtolower($action);
+    $available_actions = array("mow", "pause", "returnToDock");
     if(in_array($action, $available_actions)) {
       $retVal = $this->checkAuthentication($params);
       if($retVal['httpCode'] != 200)
