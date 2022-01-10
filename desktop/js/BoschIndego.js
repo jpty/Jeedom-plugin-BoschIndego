@@ -18,7 +18,7 @@
 
 $("#table_cmd").sortable({axis: "y", cursor: "move", items: ".cmd", placeholder: "ui-state-highlight", tolerance: "intersect", forcePlaceholderSize: true});
 /*
- * Fonction pour l'ajout de commande, appellé automatiquement par plugin.BoschIndego
+ * Fonction pour l'ajout de commande, appellée automatiquement par plugin.BoschIndego
  */
 function addCmdToTable(_cmd) {
     if (!isset(_cmd)) {
@@ -60,3 +60,13 @@ function addCmdToTable(_cmd) {
     }
     jeedom.cmd.changeType($('#table_cmd tbody tr:last'), init(_cmd.subType));
 }
+
+$('#bt_displayJson').on('click', function() {
+  $('#md_modal').dialog({title: "{{Bosch Indego Json diagnostics}}"});
+  $('#md_modal').load('index.php?v=d&plugin=BoschIndego&modal=getJson1').dialog('open');
+});
+
+$('#bt_downloadJson').on('click', function() {
+  $('#md_modal').dialog({title: "{{Téléchargement Json diagnostics}}"});
+	window.open('/plugins/BoschIndego/desktop/php/getJson.php?dl=2');
+});
