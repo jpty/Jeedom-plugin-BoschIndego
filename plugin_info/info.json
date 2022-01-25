@@ -1,6 +1,6 @@
 {
 	"id" : "BoschIndego",
-	"name" : "Bosch Indego",
+	"name" : "Bosch Indego v3",
 	"description" : "Plugin pour les robots de tonte Bosch Indego",
 	"licence" : "AGPL",
 	"author" : "jpty",
