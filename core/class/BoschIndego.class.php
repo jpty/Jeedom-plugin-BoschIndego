@@ -477,6 +477,7 @@ class BoschIndego extends eqLogic {
   public function authenticate(&$params) {
     $urlA =$params['api'] .'authenticate'; 
     $requestBody = array(
+          'accept_tc_id' => '202012',
           'device' => '',
           'os_type' => 'Android',
           'os_version' => '4.0',
